@@ -12,10 +12,10 @@ class Station
 
   def initialize(name)
     @name = name
+    validate!
     @trains = []
     @@stations << self
     register_instance
-    validate!
   end
 
   def take_train(train)
@@ -35,6 +35,5 @@ class Station
   def validate!
     raise "Название не может быть пустым" if name.nil?
     raise "Название должно состоять минимум из 2 символов" if name.length < 2
-    true
   end
 end

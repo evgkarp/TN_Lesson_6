@@ -1,13 +1,10 @@
 class Route
   include InstanceCounter
-  include Valid
   
-  attr_reader :stations, :start, :finish
+  attr_reader :stations
 
   def initialize(start, finish)
-    @start = start
-    @finish = finish
-    @stations = [start, finish]
+    @stations = [start, finish]   
     register_instance
   end
 
@@ -16,18 +13,8 @@ class Route
   end
 
   def delete_station(station)
-    start?(station)
-    finish?(station)
+    raise "Нельзя удалить первую станцию маршрута" if station == @stations[0]
+    raise "Нельзя удалить конечную станцию маршрута" if station == @stations[-1]
     @stations.delete(station)  
-  end
-
-  protected
-
-  def start?(station)
-    raise "Нельзя удалить первую станцию маршрута" if station == @start
-  end
-
-  def finish?(station)
-    raise "Нельзя удалить конечную станцию маршрута" if station == @finish
   end
 end

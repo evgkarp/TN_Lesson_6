@@ -72,12 +72,10 @@ class Main
           train_go_backward
           
         when 11
-          @stations.each { |station| puts station.name }
+          trains_list
                     
         when 12
-          station = choose_station
-          station.trains.each { |train| puts train.number }
-          puts "На станции #{station.name} нет поездов" if station.trains.empty?
+          stations_list
           
         else
           puts "Введите число от 0 до 12"
@@ -93,8 +91,8 @@ private
     station = Station.new(name)
     @stations << station
     puts "Создана станция #{station.name}"
-    rescue StandardError => e
-    puts e.inspect
+  rescue => e
+    puts e.message
     retry
   end
 
@@ -102,11 +100,11 @@ private
     puts "Введите название станции"
     name = gets.chomp
     station_name = @stations.find { |station| station.name == name }
-    raise puts "Такой станции не существует" if station_name.nil? 
-  rescue StandardError
-    retry
-    ensure
-    return station_name
+    if station_name.nil?
+      raise "Такой станции не существует"
+    else  
+      station_name
+    end
   end
 
   def create_train
@@ -123,8 +121,8 @@ private
     train = PassengerTrain.new(number)
     @trains << train
     puts "Создан пассажирский поезд номер #{number}"
-    rescue StandardError => e
-    puts e.inspect
+  rescue => e
+    puts e.message
     retry
   end
 
@@ -133,8 +131,8 @@ private
     train = CargoTrain.new(number)
     @trains << train
     puts "Создан грузовой поезд номер #{number}"
-    rescue StandardError => e
-    puts e.inspect
+  rescue => e
+    puts e.message
     retry
   end
 
@@ -146,11 +144,11 @@ private
   def choose_train
     number = input_number_of_train
     train_number = @trains.find { |train| train.number == number } 
-    raise puts "Такого поезда не существует" if train_number.nil? 
-  rescue StandardError
-    retry
-    ensure
-    return train_number
+    if train_number.nil?
+      raise "Такого поезда не существует" 
+    else
+      train_number
+    end
   end
 
   def input_type_of_train
@@ -158,14 +156,16 @@ private
     1 - Пассажирский
     2 - Грузовой"
     type = gets.to_i
-    raise puts "Введите 1 или 2" if (type != 1) && (type != 2)
-  rescue StandardError
-    retry
-    ensure
-    return type
+    if (type != 1) && (type != 2)
+      puts "Введите 1 или 2" 
+    else
+      type
+    end
   end
 
   def create_route
+    stations_empty
+    two_stations_minimum
     puts "Начальная станция: "
     start = choose_station
     puts "Конечная станция: "
@@ -173,55 +173,58 @@ private
     route = Route.new(start, finish)
     @routes << route
     puts "Создан маршрут #{start.name} - #{finish.name}"
+  rescue => e
+    puts e.message
   end
 
   def choose_route
     puts "Введите порядковый номер маршрута: "
     number = gets.to_i
     route = @routes[number - 1]
-    raise "Введите номер от 1 до #{@routes.size}" if route.nil? 
-  rescue StandardError => e
-    puts e.inspect
-    retry
-    ensure
-    return route
+    if route.nil?
+      raise "Введите номер от 1 до #{@routes.size}" 
+    else
+      route
+    end
   end
 
-  def route_empty?
+  def route_empty
     raise "Нет ни одного маршрута" if @routes.empty?
   end
 
   def add_station
-    route_empty?
+    route_empty
     station = choose_station
     route = choose_route
     route.add_station(station)
     puts "Станция #{station.name} добавлена в маршрут"
-  rescue StandardError => e
-    puts e.inspect
+  rescue => e
+    puts e.message
   end
 
   def delete_station
-    route_empty?
+    route_empty
     station = choose_station
     route = choose_route
     route.delete_station(station)
     puts "Станция #{station.name} удалена из маршрута"
-  rescue StandardError => e 
-    puts e.inspect
+  rescue => e 
+    puts e.message
   end
 
   def set_route
-    route_empty?
+    route_empty
+    trains_empty
     train = choose_train
     route = choose_route
     train.route = route
     puts "Маршрут назначен поезду номер #{train.number}" 
-  rescue StandardError => e 
-    puts e.inspect   
+  rescue => e 
+    puts e.message   
   end
 
   def add_wagon
+    trains_empty
     train = choose_train
     if train.class == PassengerTrain
       wagon = create_passenger_wagon
@@ -230,14 +233,17 @@ private
     end
     train.add_wagon(wagon) 
     puts "К поезду номер #{train.number} прицеплен вагон"
+  rescue => e
+    puts e.message
   end
 
   def delete_wagon
+    trains_empty
     train = choose_train
     train.delete_wagon
     puts "От поезда номер #{train.number} отцеплен вагон"
-  rescue StandardError => e
-    puts e.inspect
+  rescue => e
+    puts e.message
   end
 
   def create_passenger_wagon
@@ -249,28 +255,60 @@ private
   end 
 
   def train_go_forward
+    trains_empty
     train = choose_train
-    has_route?(train)
+    has_route(train)
     train.go_forward
     puts "Поезд номер #{train.number} перемещен на станцию #{train.current_station.name}" 
     #Почему при выводе сообщения после #{train.number} происходит перенос строки?
-  rescue StandardError => e
-    puts e.inspect 
+  rescue => e
+    puts e.message 
   end
 
   def train_go_backward
+    trains_empty
     train = choose_train
-    has_route?(train)
+    has_route(train)
     train.go_backward
     puts "Поезд номер #{train.number} перемещен на станцию #{train.current_station.name}"
-  rescue StandardError => e
-    puts e.inspect 
+  rescue => e
+    puts e.message 
   end
 
-  def has_route?(train)
+  def trains_list
+    stations_empty
+    @stations.each { |station| puts station.name }
+  rescue => e
+    puts e.message
+  end
+
+  def stations_list
+    stations_empty
+    station = choose_station
+    if station.trains.empty?
+      puts "На станции #{station.name} нет поездов"
+    else
+      station.trains.each { |train| puts train.number }
+    end    
+  rescue => e
+    puts e.message
+  end
+
+  def has_route(train)
     raise "Необходимо назначить маршрут поезду" if train.route.nil?
   end
 
+  def trains_empty
+    raise "Нет ни одного поезда" if @trains.empty?    
+  end
+
+  def stations_empty
+    raise "Нет ни одной станции" if @stations.empty?    
+  end
+
+  def two_stations_minimum
+    raise "Необходимо создать минимум 2 станции" if @stations.size < 2   
+  end
 end
 
 x = Main.new

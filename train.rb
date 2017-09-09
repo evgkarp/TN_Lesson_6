@@ -2,7 +2,7 @@ class Train
   include Maker
   include InstanceCounter
   include Valid
-  NUMBER_FORMAT = /^[а-я0-9]{3}-?[а-я0-9]{2}$/i
+  NUMBER_FORMAT = /^[а-я\d]{3}-?[а-я\d]{2}$/i
 
   attr_reader :number, :speed, :type, :wagons, :route
 
@@ -14,12 +14,12 @@ class Train
 
   def initialize(number)
     @number = number    
+    validate!
     @speed = 0
     @station_index = 0
     @wagons = []
     @@trains[number] = self
     register_instance
-    validate!
   end
 
   def speed_up
@@ -80,7 +80,6 @@ protected
     raise "Номер не может быть пустым" if number.nil?
     raise "Номер должен состоять минимум из 5 символов" if number.length < 5
     raise "Неверный формат номера" if number !~ NUMBER_FORMAT
-    true
   end
 
   def first_station?
